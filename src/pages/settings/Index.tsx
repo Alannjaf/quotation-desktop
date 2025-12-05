@@ -120,19 +120,9 @@ export default function SettingsIndex() {
     if (settings) {
       setCompanyAddress(settings.company_address || "");
       setLogoUrl(settings.logo_url || "");
-      // Load logo preview if there's a logo URL
+      // Load logo preview - it's stored as base64 data URL
       if (settings.logo_url) {
-        // If it's a file path and Electron is available, load the image
-        if (window.electronAPI?.loadImage && !settings.logo_url.startsWith('data:')) {
-          window.electronAPI.loadImage(settings.logo_url).then((data) => {
-            if (data) {
-              setLogoPreview(data);
-            }
-          });
-        } else {
-          // It's already a data URL or base64
-          setLogoPreview(settings.logo_url);
-        }
+        setLogoPreview(settings.logo_url);
       }
     }
   }, [settings]);
@@ -145,13 +135,10 @@ export default function SettingsIndex() {
       if (window.electronAPI?.openImageDialog) {
         const result = await window.electronAPI.openImageDialog();
         if (result) {
-          // Save the image and get the file path
-          const saveResult = await window.electronAPI.saveImage(result.data, `company-logo-${Date.now()}.png`);
-          if (saveResult.success && saveResult.path) {
-            setLogoUrl(saveResult.path);
-            setLogoPreview(result.data);
-            toast({ title: "Success", description: "Logo uploaded successfully" });
-          }
+          // Store the base64 data directly (not file path) to avoid security issues
+          setLogoUrl(result.data);
+          setLogoPreview(result.data);
+          toast({ title: "Success", description: "Logo uploaded successfully" });
         }
       } else {
         // Fallback for browser - use file input
