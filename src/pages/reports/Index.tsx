@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, parse } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CalendarIcon, FileDown, BarChart3, PieChartIcon, Package, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getQuotations, getItemTypes } from "@/lib/storage";
@@ -55,12 +55,29 @@ const COLORS = [
 export default function ReportsIndex() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // Default to current month
-  const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState<Date>(endOfMonth(new Date()));
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedItemType, setSelectedItemType] = useState<string>("all");
+  // Initialize filters from URL params or defaults
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const param = searchParams.get("start");
+    return param ? parse(param, 'yyyy-MM-dd', new Date()) : startOfMonth(new Date());
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const param = searchParams.get("end");
+    return param ? parse(param, 'yyyy-MM-dd', new Date()) : endOfMonth(new Date());
+  });
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
+  const [selectedItemType, setSelectedItemType] = useState<string>(searchParams.get("type") || "all");
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("start", format(startDate, 'yyyy-MM-dd'));
+    params.set("end", format(endDate, 'yyyy-MM-dd'));
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (selectedItemType !== "all") params.set("type", selectedItemType);
+    setSearchParams(params, { replace: true });
+  }, [startDate, endDate, statusFilter, selectedItemType, setSearchParams]);
 
   const { data: quotations = [] } = useQuery({
     queryKey: ['quotations'],
