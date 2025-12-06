@@ -1,4 +1,4 @@
-import { Navigate, RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import Index from "@/pages/Index";
 import QuotationsIndex from "@/pages/quotations/Index";
 import NewQuotation from "@/pages/quotations/New";

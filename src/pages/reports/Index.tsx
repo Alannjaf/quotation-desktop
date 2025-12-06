@@ -518,7 +518,7 @@ export default function ReportsIndex() {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ typeName, percent }) => 
+                            label={({ percent }) => 
                               percent > 0.03 ? `${(percent * 100).toFixed(0)}%` : ''
                             }
                             outerRadius={100}

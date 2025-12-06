@@ -36,8 +36,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, FileText, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getQuotations, deleteQuotation, getLatestExchangeRate, getItemTypes } from "@/lib/storage";
-import type { QuotationWithItems, QuotationStatus, BudgetType } from "@/types/database";
+import { getQuotations, deleteQuotation, getItemTypes } from "@/lib/storage";
+import type { QuotationWithItems, QuotationStatus } from "@/types/database";
 
 const statusColors: Record<QuotationStatus, string> = {
   draft: "bg-gray-500",
@@ -70,11 +70,6 @@ export default function QuotationsIndex() {
   const { data: quotations = [], isLoading } = useQuery({
     queryKey: ['quotations'],
     queryFn: getQuotations,
-  });
-
-  const { data: exchangeRate } = useQuery({
-    queryKey: ['latestExchangeRate'],
-    queryFn: getLatestExchangeRate,
   });
 
   const { data: itemTypes = [] } = useQuery({
