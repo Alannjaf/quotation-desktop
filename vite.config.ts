@@ -1,22 +1,22 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import electron from 'vite-plugin-electron'
-import renderer from 'vite-plugin-electron-renderer'
-import path from 'path'
-import fs from 'fs'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import electron from "vite-plugin-electron";
+import renderer from "vite-plugin-electron-renderer";
+import path from "path";
+import fs from "fs";
 
 // Copy preload.cjs to dist-electron
 function copyPreloadPlugin() {
   return {
-    name: 'copy-preload',
+    name: "copy-preload",
     writeBundle() {
-      const src = path.resolve(__dirname, 'electron/preload.cjs')
-      const dest = path.resolve(__dirname, 'dist-electron/preload.cjs')
+      const src = path.resolve(__dirname, "electron/preload.cjs");
+      const dest = path.resolve(__dirname, "dist-electron/preload.cjs");
       if (fs.existsSync(src)) {
-        fs.copyFileSync(src, dest)
+        fs.copyFileSync(src, dest);
       }
-    }
-  }
+    },
+  };
 }
 
 export default defineConfig({
@@ -24,29 +24,30 @@ export default defineConfig({
     react(),
     electron([
       {
-        entry: 'electron/main.ts',
+        entry: "electron/main.ts",
+        onstart(args) {
+          args.startup();
+        },
         vite: {
           build: {
-            outDir: 'dist-electron',
+            outDir: "dist-electron",
             rollupOptions: {
-              external: ['electron']
-            }
+              external: ["electron"],
+            },
           },
-          plugins: [copyPreloadPlugin()]
-        }
-      }
+          plugins: [copyPreloadPlugin()],
+        },
+      },
     ]),
-    renderer()
+    renderer(),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
-  base: './',
+  base: "./",
   build: {
-    outDir: 'dist'
-  }
-})
-
-
+    outDir: "dist",
+  },
+});

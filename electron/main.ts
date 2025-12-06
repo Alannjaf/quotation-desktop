@@ -10,6 +10,13 @@ const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
+// Ensure only one instance of the app runs
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+}
+
 // Get the app data directory for storing JSON files
 function getDataDir(): string {
   const dataDir = path.join(app.getPath("userData"), "data");
@@ -59,7 +66,8 @@ function createWindow(): void {
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
-    mainWindow.webContents.openDevTools();
+    // Uncomment below to open DevTools in development:
+    // mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
@@ -68,6 +76,14 @@ function createWindow(): void {
     mainWindow = null;
   });
 }
+
+// Handle second instance - focus existing window
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 app.whenReady().then(() => {
   initializeDataFiles();
@@ -284,12 +300,7 @@ ipcMain.handle("open-document-dialog", async () => {
 // Save document to app storage
 ipcMain.handle(
   "save-document",
-  async (
-    _event,
-    sourcePath: string,
-    quotationId: string,
-    fileName: string
-  ) => {
+  async (_event, sourcePath: string, quotationId: string, fileName: string) => {
     try {
       const docsDir = getDocumentsDir();
       const quotationDir = path.join(docsDir, quotationId);
