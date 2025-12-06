@@ -34,7 +34,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, FileDown, Loader2, Upload, FileText, Trash2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Edit, FileDown, Loader2, Upload, FileText, Trash2, ExternalLink, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { getQuotation, updateQuotation, getSettings, addVendorDocument, deleteVendorDocument } from "@/lib/storage";
 import type { QuotationStatus } from "@/types/database";
@@ -264,6 +270,102 @@ export default function ViewQuotation() {
     toast({ title: "Success", description: "PDF generated successfully" });
   };
 
+  // Generate Technical PDF (without prices)
+  const generateTechnicalPDF = async () => {
+    if (!quotation) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    let headerStartY = 15;
+
+    // Company Logo (top left)
+    if (settings?.logo_url) {
+      try {
+        let logoData = settings.logo_url;
+        
+        // If it's a file path and Electron is available, load the image
+        if (window.electronAPI?.loadImage && !settings.logo_url.startsWith('data:')) {
+          const loaded = await window.electronAPI.loadImage(settings.logo_url);
+          if (loaded) {
+            logoData = loaded;
+          }
+        }
+        
+        // Add logo to PDF
+        if (logoData.startsWith('data:')) {
+          doc.addImage(logoData, 'PNG', 14, 10, 40, 20);
+          headerStartY = 35;
+        }
+      } catch (error) {
+        console.error('Error adding logo to PDF:', error);
+      }
+    }
+
+    // Header - "TECHNICAL QUOTATION" title
+    doc.setFontSize(20);
+    doc.text("TECHNICAL QUOTATION", pageWidth / 2, headerStartY, { align: "center" });
+
+    // Quotation details (left side)
+    const detailsStartY = headerStartY + 15;
+    doc.setFontSize(12);
+    doc.text(`Quotation #: ${quotation.quotation_number}`, 14, detailsStartY);
+    doc.text(`Date: ${format(new Date(quotation.date), "PPP")}`, 14, detailsStartY + 8);
+    doc.text(`Valid Until: ${format(new Date(quotation.validity_date), "PPP")}`, 14, detailsStartY + 16);
+
+    // Recipient (right side)
+    doc.text(`To: ${quotation.recipient}`, pageWidth - 80, detailsStartY);
+    doc.text(`Project: ${quotation.project_name}`, pageWidth - 80, detailsStartY + 8);
+
+    // Items table (without price columns)
+    const tableData = quotation.quotation_items.map((item, index) => [
+      index + 1,
+      item.name,
+      item.description || '-',
+      item.quantity,
+    ]);
+
+    const tableStartY = detailsStartY + 30;
+    autoTable(doc, {
+      startY: tableStartY,
+      head: [["#", "Description", "Details", "Qty"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [128, 90, 213] },
+      columnStyles: {
+        0: { cellWidth: 15 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 20 },
+      },
+    });
+
+    // Notes
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    if (quotation.note) {
+      doc.setFontSize(10);
+      doc.text("Notes:", 14, finalY);
+      doc.text(quotation.note, 14, finalY + 8);
+    }
+
+    // Company Address (bottom left)
+    if (settings?.company_address) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      const addressLines = settings.company_address.split('\n');
+      const addressStartY = pageHeight - 20 - (addressLines.length * 5);
+      addressLines.forEach((line, index) => {
+        doc.text(line, 14, addressStartY + (index * 5));
+      });
+      doc.setTextColor(0, 0, 0); // Reset to black
+    }
+
+    // Save PDF
+    doc.save(`${quotation.quotation_number}_technical.pdf`);
+    toast({ title: "Success", description: "Technical PDF generated successfully" });
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -293,7 +395,7 @@ export default function ViewQuotation() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/quotations')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
@@ -317,10 +419,25 @@ export default function ViewQuotation() {
                 <SelectItem value="invoiced">Invoiced</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={generatePDF}>
-              <FileDown className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  PDF
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={generatePDF}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Full PDF (with prices)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generateTechnicalPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Technical PDF (no prices)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => navigate(`/quotations/${id}/edit`)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit

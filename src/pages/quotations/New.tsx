@@ -525,7 +525,7 @@ export default function NewQuotation() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/quotations')}
+              onClick={() => navigate(-1)}
             >
               Cancel
             </Button>

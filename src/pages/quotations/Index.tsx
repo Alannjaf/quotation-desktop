@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from 'xlsx';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -51,10 +51,21 @@ export default function QuotationsIndex() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [budgetFilter, setBudgetFilter] = useState<string>("all");
+  // Initialize filters from URL params
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
+  const [budgetFilter, setBudgetFilter] = useState<string>(searchParams.get("budget") || "all");
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (budgetFilter !== "all") params.set("budget", budgetFilter);
+    setSearchParams(params, { replace: true });
+  }, [search, statusFilter, budgetFilter, setSearchParams]);
 
   const { data: quotations = [], isLoading } = useQuery({
     queryKey: ['quotations'],

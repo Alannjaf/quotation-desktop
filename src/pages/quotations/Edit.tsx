@@ -246,7 +246,7 @@ export default function EditQuotation() {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       queryClient.invalidateQueries({ queryKey: ['quotation', id] });
       toast({ title: "Success", description: "Quotation updated successfully" });
-      navigate('/quotations');
+      navigate(-1);
     } catch (error) {
       toast({ title: "Error", description: "Failed to update quotation", variant: "destructive" });
     } finally {
@@ -599,7 +599,7 @@ export default function EditQuotation() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/quotations')}
+              onClick={() => navigate(-1)}
             >
               Cancel
             </Button>
