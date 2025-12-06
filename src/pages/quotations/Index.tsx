@@ -77,14 +77,16 @@ export default function QuotationsIndex() {
     },
   });
 
-  // Filter quotations
-  const filteredQuotations = quotations.filter((q) => {
-    const matchesSearch = q.project_name.toLowerCase().includes(search.toLowerCase()) ||
-      q.quotation_number.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || q.status === statusFilter;
-    const matchesBudget = budgetFilter === "all" || q.budget_type === budgetFilter;
-    return matchesSearch && matchesStatus && matchesBudget;
-  });
+  // Filter and sort quotations (most recent first)
+  const filteredQuotations = quotations
+    .filter((q) => {
+      const matchesSearch = q.project_name.toLowerCase().includes(search.toLowerCase()) ||
+        q.quotation_number.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "all" || q.status === statusFilter;
+      const matchesBudget = budgetFilter === "all" || q.budget_type === budgetFilter;
+      return matchesSearch && matchesStatus && matchesBudget;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Calculate totals
   const calculateTotal = (q: QuotationWithItems) => {
