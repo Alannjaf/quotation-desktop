@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, FileText, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getQuotations, deleteQuotation, getLatestExchangeRate } from "@/lib/storage";
+import { getQuotations, deleteQuotation, getLatestExchangeRate, getItemTypes } from "@/lib/storage";
 import type { QuotationWithItems, QuotationStatus, BudgetType } from "@/types/database";
 
 const statusColors: Record<QuotationStatus, string> = {
@@ -77,6 +77,11 @@ export default function QuotationsIndex() {
     queryFn: getLatestExchangeRate,
   });
 
+  const { data: itemTypes = [] } = useQuery({
+    queryKey: ['itemTypes'],
+    queryFn: getItemTypes,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: deleteQuotation,
     onSuccess: () => {
@@ -107,21 +112,73 @@ export default function QuotationsIndex() {
   const handleExport = () => {
     if (!filteredQuotations.length) return;
 
-    const exportData = filteredQuotations.map((q) => ({
-      'Quotation Number': q.quotation_number,
-      'Project Name': q.project_name,
-      'Recipient': q.recipient,
-      'Date': format(new Date(q.date), 'PPP'),
-      'Validity Date': format(new Date(q.validity_date), 'PPP'),
-      'Status': q.status.charAt(0).toUpperCase() + q.status.slice(1),
-      'Budget Type': q.budget_type === 'ma' ? 'MA' : 'Korek',
-      'Currency': q.currency_type.toUpperCase(),
-      'Total': calculateTotal(q),
-      'Vendor Cost': q.vendor_cost,
-      'Note': q.note || '',
-    }));
+    // Export data - quotation info once, then items below
+    const exportData: (string | number)[][] = [];
+    
+    // Header row
+    exportData.push([
+      'Quotation Number', 'Project Name', 'Recipient', 'Date', 'Validity Date',
+      'Status', 'Budget Type', 'Currency', 'Quotation Total', 'Vendor Name', 'Vendor Cost', 
+      'Discount', 'Note'
+    ]);
+    
+    // Items header
+    const itemsHeader = [
+      '', '', '', '', '', '', '', '', '',
+      'Item #', 'Item Name', 'Item Type', 'Description', 'Quantity', 'Unit Price', 'Item Total'
+    ];
+    
+    // Helper to get item type name
+    const getItemTypeName = (typeId: string | null) => {
+      if (!typeId) return '';
+      const type = itemTypes.find(t => t.id === typeId);
+      return type?.name || '';
+    };
+    
+    filteredQuotations.forEach((q) => {
+      const quotationTotal = calculateTotal(q);
+      
+      // Quotation row
+      exportData.push([
+        q.quotation_number,
+        q.project_name,
+        q.recipient,
+        format(new Date(q.date), 'PPP'),
+        format(new Date(q.validity_date), 'PPP'),
+        q.status.charAt(0).toUpperCase() + q.status.slice(1),
+        q.budget_type === 'ma' ? 'MA' : 'Korek',
+        q.currency_type.toUpperCase(),
+        quotationTotal,
+        q.vendor?.name || '',
+        q.vendor_cost,
+        q.discount,
+        q.note || ''
+      ]);
+      
+      // Items sub-header
+      if (q.quotation_items && q.quotation_items.length > 0) {
+        exportData.push(itemsHeader);
+        
+        // Item rows
+        q.quotation_items.forEach((item, index) => {
+          exportData.push([
+            '', '', '', '', '', '', '', '', '',
+            index + 1,
+            item.name,
+            getItemTypeName(item.type_id),
+            item.description || '',
+            item.quantity,
+            item.unit_price,
+            item.total_price
+          ]);
+        });
+      }
+      
+      // Empty row between quotations
+      exportData.push([]);
+    });
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Quotations');
     XLSX.writeFile(wb, `quotations_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
