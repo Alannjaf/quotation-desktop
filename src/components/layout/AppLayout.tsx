@@ -1,6 +1,6 @@
 import { ModeToggle } from "./ModeToggle";
 import { Link, useLocation } from "react-router-dom";
-import { FileText, Settings, Home } from "lucide-react";
+import { FileText, Settings, Home, BarChart3 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getSettings } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navLinks = [
     { to: "/", icon: Home, label: "Dashboard" },
     { to: "/quotations", icon: FileText, label: "Quotations" },
+    { to: "/reports", icon: BarChart3, label: "Reports" },
     { to: "/settings", icon: Settings, label: "Settings" },
   ];
 
