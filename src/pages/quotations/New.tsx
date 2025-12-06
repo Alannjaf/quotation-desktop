@@ -43,6 +43,19 @@ import {
 } from "@/lib/storage";
 import type { BudgetType, CurrencyType, QuotationStatus } from "@/types/database";
 
+// Format number with commas
+const formatNumberWithCommas = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US');
+};
+
+// Parse formatted number back to number
+const parseFormattedNumber = (value: string): number => {
+  const num = parseFloat(value.replace(/,/g, ''));
+  return isNaN(num) ? 0 : num;
+};
+
 interface QuotationItem {
   id: string;
   name: string;
@@ -65,10 +78,10 @@ export default function NewQuotation() {
   const [validityDate, setValidityDate] = useState<Date>(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [budgetType, setBudgetType] = useState<BudgetType>("ma");
   const [recipient, setRecipient] = useState("");
-  const [currencyType, setCurrencyType] = useState<CurrencyType>("usd");
+  const [currencyType, setCurrencyType] = useState<CurrencyType>("iqd");
   const [vendorName, setVendorName] = useState("");
   const [vendorCost, setVendorCost] = useState(0);
-  const [vendorCurrencyType, setVendorCurrencyType] = useState<CurrencyType>("usd");
+  const [vendorCurrencyType, setVendorCurrencyType] = useState<CurrencyType>("iqd");
   const [discount, setDiscount] = useState(0);
   const [note, setNote] = useState("");
   const [items, setItems] = useState<QuotationItem[]>([]);
@@ -349,10 +362,12 @@ export default function NewQuotation() {
               <div className="space-y-2">
                 <Label>Vendor Cost</Label>
                 <Input
-                  type="number"
-                  value={vendorCost}
-                  onChange={(e) => setVendorCost(Number(e.target.value))}
-                  min={0}
+                  type="text"
+                  value={formatNumberWithCommas(vendorCost)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d,]/g, '');
+                    setVendorCost(parseFormattedNumber(value));
+                  }}
                 />
               </div>
 
@@ -434,10 +449,12 @@ export default function NewQuotation() {
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => updateItem(item.id, 'unit_price', Number(e.target.value))}
-                            min={0}
+                            type="text"
+                            value={formatNumberWithCommas(item.unit_price)}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^\d,]/g, '');
+                              updateItem(item.id, 'unit_price', parseFormattedNumber(value));
+                            }}
                           />
                         </TableCell>
                         <TableCell className="text-right font-mono">
