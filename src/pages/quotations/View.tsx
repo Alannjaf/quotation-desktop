@@ -153,7 +153,7 @@ export default function ViewQuotation() {
 
   // Calculate totals
   const subtotal = quotation?.quotation_items?.reduce((sum, item) => sum + Number(item.total_price), 0) || 0;
-  const discountAmount = (subtotal * (quotation?.discount || 0)) / 100;
+  const discountAmount = quotation?.discount || 0;
   const total = subtotal - discountAmount;
 
   // Generate PDF
@@ -229,7 +229,7 @@ export default function ViewQuotation() {
     
     let contentEndY = finalY + 10;
     if (quotation.discount > 0) {
-      doc.text(`Discount (${quotation.discount}%): -${discountAmount.toLocaleString()} ${quotation.currency_type.toUpperCase()}`, pageWidth - 60, finalY + 8);
+      doc.text(`Discount: -${discountAmount.toLocaleString()} ${quotation.currency_type.toUpperCase()}`, pageWidth - 60, finalY + 8);
       doc.setFontSize(14);
       doc.text(`Total: ${total.toLocaleString()} ${quotation.currency_type.toUpperCase()}`, pageWidth - 60, finalY + 18);
       contentEndY = finalY + 28;
@@ -432,7 +432,7 @@ export default function ViewQuotation() {
               </div>
               {quotation.discount > 0 && (
                 <div className="flex justify-between w-64">
-                  <span className="text-muted-foreground">Discount ({quotation.discount}%)</span>
+                  <span className="text-muted-foreground">Discount</span>
                   <span className="font-mono text-destructive">
                     -{discountAmount.toLocaleString()} {quotation.currency_type.toUpperCase()}
                   </span>

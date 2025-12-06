@@ -180,8 +180,7 @@ export default function EditQuotation() {
 
   // Calculate total
   const total = items.reduce((sum, item) => sum + item.total_price, 0);
-  const discountAmount = (total * discount) / 100;
-  const finalTotal = total - discountAmount;
+  const finalTotal = total - discount;
 
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -553,14 +552,15 @@ export default function EditQuotation() {
               {items.length > 0 && (
                 <div className="mt-4 flex flex-col items-end gap-2 border-t pt-4">
                   <div className="flex items-center gap-4">
-                    <Label>Discount (%)</Label>
+                    <Label>Discount</Label>
                     <Input
-                      type="number"
-                      value={discount}
-                      onChange={(e) => setDiscount(Number(e.target.value))}
-                      className="w-24"
-                      min={0}
-                      max={100}
+                      type="text"
+                      value={formatNumberWithCommas(discount)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d,]/g, '');
+                        setDiscount(parseFormattedNumber(value));
+                      }}
+                      className="w-32"
                     />
                   </div>
                   <div className="text-sm text-muted-foreground">
@@ -568,7 +568,7 @@ export default function EditQuotation() {
                   </div>
                   {discount > 0 && (
                     <div className="text-sm text-muted-foreground">
-                      Discount: -{discountAmount.toLocaleString()} {currencyType.toUpperCase()}
+                      Discount: -{discount.toLocaleString()} {currencyType.toUpperCase()}
                     </div>
                   )}
                   <div className="text-lg font-bold">

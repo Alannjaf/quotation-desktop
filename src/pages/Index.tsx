@@ -31,9 +31,8 @@ export default function Index() {
   const totalProfit = invoicedQuotations.reduce((sum, quote) => {
     const itemsTotal = quote.quotation_items?.reduce((itemSum, item) => itemSum + Number(item.total_price), 0) || 0;
     
-    // Apply discount to get the final quotation amount
-    const discountAmount = itemsTotal * (Number(quote.discount) / 100);
-    const finalTotal = itemsTotal - discountAmount;
+    // Apply discount (now stored as amount, not percentage)
+    const finalTotal = itemsTotal - Number(quote.discount);
     
     const vendorCostInIQD = quote.vendor_currency_type === 'usd' 
       ? Number(quote.vendor_cost) * exchangeRate 
